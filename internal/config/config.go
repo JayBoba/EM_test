@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -43,4 +44,11 @@ func Load() (*Config, error) {
 		LogLevel:   getEnv("LOG_LEVEL", "info"),
 	}
 	return cfg, nil
+}
+
+func (c *Config) DSN() string {
+	return fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName,
+	)
 }
