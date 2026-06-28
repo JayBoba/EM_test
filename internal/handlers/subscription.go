@@ -142,3 +142,27 @@ func DeleteSubscription(c *gin.Context) {
 	}
 	c.Status(http.StatusNoContent)
 }
+
+func ListSubscriptions(c *gin.Context) {
+	var query struct {
+		UserID      string `form:"user_id"`
+		ServiceName string `form:"service_name"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	db := c.MustGet("db").(*gorm.DB).Model(&models.Subscription{})
+	if query.UserID != "" {
+		db = db.Where("user_id = ?", query.UserID)
+	}
+	if query.ServiceName != "" {
+		db = db.Where("service_name = ?", query.ServiceName)
+	}
+	var subs []models.Subscription
+	if err := db.Find(&subs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, subs)
+}
