@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -59,4 +60,23 @@ func CreateSubscription(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, sub)
+}
+
+func GetSubscription(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+	}
+
+	db := c.MustGet("db").(*gorm.DB)
+	var sub models.Subscription
+	if err := db.First(&sub, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, sub)
 }
