@@ -166,3 +166,40 @@ func ListSubscriptions(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, subs)
 }
+
+func AggregateCost(c *gin.Context) {
+	var query struct {
+		UserID      string `form:"user_id"`
+		ServiceName string `form:"service_name"`
+		StartDate   string `form:"start_date" binding:"required"`
+		EndDate     string `form:"end_date" binding:"required"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	start, err := parseMonthYear(query.StartDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid start_date format"})
+		return
+	}
+	end, err := parseMonthYear(query.EndDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid end_date format"})
+		return
+	}
+	end = end.AddDate(0, 1, -1)
+	db := c.MustGet("db").(*gorm.DB).Model(&models.Subscription{})
+	db = db.Where("start_date <= ? AND (end_date IS NULL OR end_date >= ?)", end, start)
+
+	if query.UserID != "" {
+		db = db.Where("user_id = ?", query.UserID)
+	}
+	if query.ServiceName != "" {
+		db = db.Where("service_name = ?", query.ServiceName)
+	}
+	var total int64
+	db.Select("COALESCE(SUM(price), 0)").Scan(&total)
+	c.JSON(http.StatusOK, gin.H{"total_cost": total})
+
+}
