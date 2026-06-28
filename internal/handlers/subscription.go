@@ -80,3 +80,51 @@ func GetSubscription(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, sub)
 }
+
+func UpdateSubscription(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+	}
+	var input SubsInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	startDate, err := parseMonthYear(input.StartDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid start_date format, use MM-YYYY"})
+		return
+	}
+
+	var endDate *time.Time
+	if input.EndDate != nil {
+		parsed, err := parseMonthYear(*input.EndDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid end_date format, use MM-YYYY"})
+			return
+		}
+		endDate = &parsed
+	}
+	db := c.MustGet("db").(*gorm.DB)
+	var sub models.Subscription
+	if err := db.First(&sub, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	sub.ServiceName = input.ServiceName
+	sub.Price = input.Price
+	sub.UserID = uuid.MustParse(input.UserID)
+	sub.StartDate = startDate
+	sub.EndDate = endDate
+
+	if err := db.Save(&sub).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, sub)
+}
