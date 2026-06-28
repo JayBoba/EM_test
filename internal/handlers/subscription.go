@@ -128,3 +128,17 @@ func UpdateSubscription(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, sub)
 }
+
+func DeleteSubscription(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+	db := c.MustGet("db").(*gorm.DB)
+	if err := db.Delete(&models.Subscription{}, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
