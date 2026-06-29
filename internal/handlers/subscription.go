@@ -20,7 +20,7 @@ type SubsInput struct {
 }
 
 func parseMonthYear(s string) (time.Time, error) {
-	return time.Parse("01-2001", s)
+	return time.Parse("01-2006", s)
 }
 
 func CreateSubscription(c *gin.Context) {
