@@ -7,6 +7,7 @@ import (
 	"github.com/JayBoba/EM_test/internal/config"
 	"github.com/JayBoba/EM_test/internal/db"
 	"github.com/JayBoba/EM_test/internal/handlers"
+	"github.com/JayBoba/EM_test/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -30,7 +31,7 @@ func main() {
 	}
 
 	r := gin.New()
-	//r.Use(middleware. ...) // TBD
+	r.Use(middleware.GinZap(logger))
 	r.Use(gin.Recovery())
 
 	// swagger intefrace TBD also
