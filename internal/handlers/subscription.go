@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	_ "github.com/JayBoba/EM_test/docs"
 	"github.com/JayBoba/EM_test/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -13,7 +14,7 @@ import (
 
 type SubsInput struct {
 	ServiceName string  `json:"service_name" binding:"required"`
-	Price       int     `json:"price" binding:"required,min=0"`
+	Price       int     `json:"priceSubsInput" binding:"required,min=0"`
 	UserID      string  `json:"user_id" binding:"required,uuid"`
 	StartDate   string  `json:"start_date" binding:"required"`
 	EndDate     *string `json:"end_date,omitempty"`
@@ -23,6 +24,16 @@ func parseMonthYear(s string) (time.Time, error) {
 	return time.Parse("01-2006", s)
 }
 
+// CreateSubscription godoc
+// @Summary Create a new subscription
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param input body SubsInput true "Subscription data"
+// @Success 201 {object} models.Subscription
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /subscriptions [post]
 func CreateSubscription(c *gin.Context) {
 	var inputJSON SubsInput
 	if err := c.ShouldBindJSON(&inputJSON); err != nil {
@@ -62,6 +73,17 @@ func CreateSubscription(c *gin.Context) {
 	c.JSON(http.StatusCreated, sub)
 }
 
+// GetSubscription godoc
+// @Summary      Get subscription by ID
+// @Description  Возвращает подписку по её UUID.
+// @Tags         subscriptions
+// @Produce      json
+// @Param        id   path      string  true  "Subscription UUID"
+// @Success      200  {object}  models.Subscription
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      404  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /subscriptions/{id} [get]
 func GetSubscription(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -81,6 +103,19 @@ func GetSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, sub)
 }
 
+// UpdateSubscription godoc
+// @Summary      Update an existing subscription
+// @Description  Полностью обновляет все поля подписки. Требуется передать все обязательные поля.
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        id     path      string               true  "Subscription UUID"
+// @Param        input  body      SubsInput    true  "New subscription data"
+// @Success      200    {object}  models.Subscription
+// @Failure      400    {object}  map[string]interface{}
+// @Failure      404    {object}  map[string]interface{}
+// @Failure      500    {object}  map[string]interface{}
+// @Router       /subscriptions/{id} [put]
 func UpdateSubscription(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -129,6 +164,16 @@ func UpdateSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, sub)
 }
 
+// DeleteSubscription godoc
+// @Summary      Delete a subscription
+// @Description  Удаляет подписку по UUID.
+// @Tags         subscriptions
+// @Produce      json
+// @Param        id   path      string  true  "Subscription UUID"
+// @Success      204  "No Content"
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /subscriptions/{id} [delete]
 func DeleteSubscription(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -143,6 +188,17 @@ func DeleteSubscription(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// ListSubscriptions godoc
+// @Summary      List all subscriptions
+// @Description  Возвращает список подписок с опциональной фильтрацией по user_id и/или service_name.
+// @Tags         subscriptions
+// @Produce      json
+// @Param        user_id       query     string  false  "Filter by user UUID"
+// @Param        service_name  query     string  false  "Filter by exact service name"
+// @Success      200  {array}   models.Subscription
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /subscriptions [get]
 func ListSubscriptions(c *gin.Context) {
 	var query struct {
 		UserID      string `form:"user_id"`
@@ -167,6 +223,19 @@ func ListSubscriptions(c *gin.Context) {
 	c.JSON(http.StatusOK, subs)
 }
 
+// AggregateCost godoc
+// @Summary      Calculate total subscription cost for a period
+// @Description  Суммирует стоимость всех подписок, которые пересекаются с заданным интервалом (месяцы включительно). Можно фильтровать по пользователю и названию сервиса.
+// @Tags         subscriptions
+// @Produce      json
+// @Param        start_date    query     string  true   "Start month-year (MM-YYYY)"
+// @Param        end_date      query     string  true   "End month-year (MM-YYYY)"
+// @Param        user_id       query     string  false  "Filter by user UUID"
+// @Param        service_name  query     string  false  "Filter by exact service name"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /subscriptions/aggregate [get]
 func AggregateCost(c *gin.Context) {
 	var query struct {
 		UserID      string `form:"user_id"`

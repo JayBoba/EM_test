@@ -4,14 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
+	_ "github.com/JayBoba/EM_test/docs"
 	"github.com/JayBoba/EM_test/internal/config"
 	"github.com/JayBoba/EM_test/internal/db"
 	"github.com/JayBoba/EM_test/internal/handlers"
 	"github.com/JayBoba/EM_test/internal/middleware"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 )
 
+// @title Subscription Aggregation API
+// @version 1.0
+// @description REST сервис для управления подписками и агрегации
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
@@ -33,8 +41,8 @@ func main() {
 	r := gin.New()
 	r.Use(middleware.GinZap(logger))
 	r.Use(gin.Recovery())
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// swagger intefrace TBD also
 	api := r.Group("/api/v1")
 	api.Use(func(c *gin.Context) {
 		c.Set("db", dbConn)
